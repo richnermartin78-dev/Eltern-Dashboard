@@ -1,196 +1,231 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#111827">
-  <meta name="description" content="Privates, synchronisierbares Tagebuch als PWA">
-  <link rel="manifest" href="./manifest.json">
-  <link rel="icon" href="./icon-192.png">
-  <link rel="stylesheet" href="./styles.css">
-  <title>Mein Tagebuch</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1f2937" />
+  <title>Gemeinsam für die Kinder</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<div class="app">
-  <header>
-    <div class="headrow">
-      <div>
-        <h1 id="appTitle">Mein Tagebuch</h1>
-        <div class="date-label" id="todayLabel"></div>
-      </div>
-      <button id="syncBadge" class="sync-badge" title="Synchronisieren">● Lokal</button>
+  <header class="topbar">
+    <div>
+      <div class="kicker">Gemeinsam für die Kinder</div>
+      <h1>Eltern-Übersicht</h1>
     </div>
+    <button id="logoutBtn" class="small-btn hidden" type="button">Abmelden</button>
   </header>
 
-  <main>
-    <section id="screen-today" class="screen active">
-      <div id="authNotice" class="card notice">
-        <div>
-          <strong>☁️ Cloud-Sync noch nicht aktiv</strong>
-          <div class="note">Die App funktioniert lokal. Unter Einstellungen kannst du Supabase verbinden und dich anmelden.</div>
-        </div>
-        <button class="btn small" data-goto="settings">Einrichten</button>
+  <main class="wrap">
+    <section id="configScreen" class="card hidden">
+      <h2>Einmalige Einrichtung</h2>
+      <p>In <strong>config.js</strong> müssen nur die Supabase Project URL und der anon/public key eingetragen werden.</p>
+      <p class="muted">Danach muss an der Technik nichts mehr geändert werden.</p>
+    </section>
+
+    <section id="authScreen" class="auth hidden">
+      <div class="card">
+        <h2>Anmelden</h2>
+        <p class="muted">E-Mail und Passwort eingeben. Mehr ist nicht nötig.</p>
+        <form id="loginForm" class="form">
+          <label>E-Mail
+            <input id="loginEmail" type="email" autocomplete="email" required />
+          </label>
+          <label>Passwort
+            <input id="loginPassword" type="password" autocomplete="current-password" minlength="6" required />
+          </label>
+          <button class="primary big" type="submit">Anmelden</button>
+        </form>
+        <button id="showRegisterBtn" class="link-btn" type="button">Erstes Mal hier? Konto erstellen</button>
+        <div id="authMsg" class="msg" aria-live="polite"></div>
       </div>
 
-      <div class="card">
-        <div class="section-title">📝 Tages-Eintrag</div>
-        <label class="field"><span>Datum</span><input id="entryDate" type="date"></label>
-
-        <div class="section-title">😊 Wie geht es mir gerade?</div>
-        <div class="moods">
-          <button class="mood-btn" data-v="1">😞<small>sehr tief</small></button>
-          <button class="mood-btn" data-v="2">😕<small>eher tief</small></button>
-          <button class="mood-btn" data-v="3">😐<small>neutral</small></button>
-          <button class="mood-btn" data-v="4">🙂<small>gut</small></button>
-          <button class="mood-btn" data-v="5">😊<small>sehr gut</small></button>
-        </div>
-
-        <div class="slider-wrap">
-          <div class="slider-head"><span>⚡ Energie</span><span class="value-pill" id="energyVal">5</span></div>
-          <input id="energy" type="range" min="0" max="10" step="1" value="5">
-        </div>
-        <div class="slider-wrap">
-          <div class="slider-head"><span>🧠 Innere Anspannung</span><span class="value-pill" id="tensionVal">5</span></div>
-          <input id="tension" type="range" min="0" max="10" step="1" value="5">
-        </div>
-        <div class="slider-wrap">
-          <div class="slider-head"><span>😴 Schlaf</span><span class="value-pill" id="sleepVal">3</span></div>
-          <input id="sleep" type="range" min="1" max="5" step="1" value="3">
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="section-title">💭 Gedanken & Rückblick</div>
-        <label class="field"><span>Was beschäftigt mich heute?</span><textarea id="thoughts" placeholder="Ein paar Stichworte reichen..."></textarea></label>
-        <label class="field"><span>☀️ Was war heute gut?</span><textarea id="good" placeholder="Was hat dir gutgetan oder Freude gemacht?"></textarea></label>
-        <label class="field"><span>🌧️ Was war schwierig?</span><textarea id="hard" placeholder="Was hat Kraft gekostet?"></textarea></label>
-        <label class="field"><span>🛠️ Was hat mir geholfen?</span><textarea id="helped" placeholder="Menschen, Gedanken, Pausen, Bewegung, Musik..."></textarea></label>
-        <label class="field"><span>⭐ Mein Moment des Tages</span><textarea id="moment" placeholder="Ein Moment, den du behalten möchtest..."></textarea></label>
-        <label class="field"><span>🎯 Für morgen</span><textarea id="tomorrow" placeholder="Eine Sache, die morgen wichtig ist..."></textarea></label>
-      </div>
-
-      <div class="card">
-        <div class="section-title">❤️ Gefühle</div>
-        <div class="chips" id="feelings"></div>
-        <div class="section-title spaced">🌱 Was habe ich für mich getan?</div>
-        <div class="chips" id="selfcare"></div>
-        <div class="actions">
-          <button class="btn primary" id="saveBtn">💾 Eintrag speichern</button>
-          <button class="btn ghost" id="clearBtn">↺ Felder leeren</button>
-        </div>
-        <div class="status" id="formStatus"></div>
+      <div id="registerCard" class="card hidden">
+        <h2>Konto erstellen</h2>
+        <form id="registerForm" class="form">
+          <label>E-Mail
+            <input id="regEmail" type="email" required />
+          </label>
+          <label>Passwort
+            <input id="regPassword" type="password" minlength="6" required />
+          </label>
+          <button class="primary big" type="submit">Konto erstellen</button>
+        </form>
+        <p class="muted">Falls Supabase E-Mail-Bestätigung aktiviert ist, zuerst die Bestätigungs-Mail öffnen.</p>
       </div>
     </section>
 
-    <section id="screen-history" class="screen">
-      <div class="card">
-        <div class="section-title">📖 Verlauf</div>
-        <input id="historySearch" type="search" placeholder="Einträge durchsuchen...">
-        <div id="historyList" class="history-list"></div>
-      </div>
-      <div class="card">
-        <div class="calendar-head">
-          <button id="prevMonth">‹</button>
-          <strong id="monthTitle"></strong>
-          <button id="nextMonth">›</button>
+    <section id="setupScreen" class="hidden">
+      <div class="setup-grid">
+        <div class="card">
+          <h2>Neuen Familienbereich erstellen</h2>
+          <form id="createFamilyForm" class="form">
+            <label>Dein Name
+              <input id="createName" type="text" maxlength="50" required />
+            </label>
+            <label>Name Kind 1
+              <input id="childOne" type="text" maxlength="50" required />
+            </label>
+            <label>Name Kind 2
+              <input id="childTwo" type="text" maxlength="50" />
+            </label>
+            <button class="primary big" type="submit">Familienbereich erstellen</button>
+          </form>
         </div>
-        <div class="cal-grid" id="calendar"></div>
+
+        <div class="card">
+          <h2>Beitreten</h2>
+          <p class="muted">Für den zweiten Elternteil.</p>
+          <form id="joinFamilyForm" class="form">
+            <label>Dein Name
+              <input id="joinName" type="text" maxlength="50" required />
+            </label>
+            <label>Einladungscode
+              <input id="joinCode" type="text" maxlength="8" required placeholder="ABCDEFGH" />
+            </label>
+            <button class="secondary big" type="submit">Beitreten</button>
+          </form>
+        </div>
       </div>
     </section>
 
-    <section id="screen-stats" class="screen">
-      <div class="card">
-        <div class="section-title">📊 Auswertung</div>
-        <div class="seg">
-          <button data-days="7" class="active">7 Tage</button>
-          <button data-days="30">30 Tage</button>
+    <section id="dashboard" class="hidden">
+      <div class="principle">
+        <strong>Wichtig:</strong> Themen der Kinder direkt zwischen den Eltern klären – nicht über die Kinder.
+      </div>
+
+      <div class="child-switch" id="childSwitch"></div>
+
+      <div class="quick-grid">
+        <button class="quick" data-quick="task" type="button">
+          <span class="quick-icon">✓</span>
+          <span><strong>Pendenz</strong><small>Etwas muss erledigt werden</small></span>
+        </button>
+        <button class="quick" data-quick="event" type="button">
+          <span class="quick-icon">◷</span>
+          <span><strong>Termin</strong><small>Arzt, Schule, Kurs usw.</small></span>
+        </button>
+        <button class="quick" data-quick="info" type="button">
+          <span class="quick-icon">i</span>
+          <span><strong>Wichtig</strong><small>Information für beide Eltern</small></span>
+        </button>
+        <button class="quick" data-quick="decision" type="button">
+          <span class="quick-icon">?</span>
+          <span><strong>Entscheid</strong><small>Gemeinsam besprechen</small></span>
+        </button>
+      </div>
+
+      <section class="card summary">
+        <div class="summary-head">
+          <div>
+            <div class="kicker">Aktuell</div>
+            <h2 id="childHeading">Übersicht</h2>
+          </div>
+          <button id="refreshBtn" class="small-btn" type="button">Aktualisieren</button>
         </div>
         <div class="stats">
-          <div class="stat"><strong id="avgMood">–</strong><span>Stimmung / 5</span></div>
-          <div class="stat"><strong id="avgEnergy">–</strong><span>Energie / 10</span></div>
-          <div class="stat"><strong id="avgTension">–</strong><span>Anspannung / 10</span></div>
-          <div class="stat"><strong id="avgSleep">–</strong><span>Schlaf / 5</span></div>
+          <div><strong id="openCount">0</strong><span>offen</span></div>
+          <div><strong id="urgentCount">0</strong><span>dringend</span></div>
+          <div><strong id="decisionCount">0</strong><span>Entscheide</span></div>
         </div>
-        <canvas id="chart" width="760" height="260"></canvas>
-        <p class="note">Stimmung und Schlaf werden für das Diagramm auf eine 0–10-Skala umgerechnet.</p>
-      </div>
-    </section>
+      </section>
 
-    <section id="screen-settings" class="screen">
-      <div class="card">
-        <div class="section-title">☁️ Cloud-Synchronisierung</div>
-        <div id="cloudConfig">
-          <label class="field"><span>Supabase Project URL</span><input id="supabaseUrl" type="url" placeholder="https://xxxxx.supabase.co"></label>
-          <label class="field"><span>Supabase Publishable Key</span><input id="supabaseKey" type="password" placeholder="sb_publishable_..."></label>
-          <div class="actions">
-            <button class="btn primary" id="connectCloud">Verbindung speichern</button>
-            <button class="btn ghost" id="forgetCloud">Verbindung entfernen</button>
-          </div>
-          <p class="note">Nur Publishable-/Anon-Key verwenden. Niemals Secret- oder Service-Role-Key hier eintragen.</p>
+      <section class="card">
+        <div class="section-title">
+          <h2>Offene Punkte</h2>
+          <select id="filterType" aria-label="Bereich filtern">
+            <option value="all">Alle</option>
+            <option value="task">Pendenzen</option>
+            <option value="event">Termine</option>
+            <option value="info">Wichtiges</option>
+            <option value="decision">Entscheide</option>
+          </select>
         </div>
+        <div id="itemsList" class="items"></div>
+        <div id="emptyState" class="empty hidden">Aktuell keine Einträge.</div>
+      </section>
 
-        <hr>
+      <section class="card parent-check">
+        <div class="kicker">Eltern-Austausch</div>
+        <h2>Nächste Besprechung</h2>
+        <p class="muted">Hier erscheinen automatisch offene Entscheidungen und dringende Punkte.</p>
+        <div id="parentCheckList" class="check-list"></div>
+      </section>
 
-        <div id="signedOutBox">
-          <div class="section-title">🔐 Anmeldung</div>
-          <label class="field"><span>E-Mail</span><input id="authEmail" type="email" autocomplete="email"></label>
-          <label class="field"><span>Passwort</span><input id="authPassword" type="password" autocomplete="current-password" minlength="8"></label>
-          <div class="actions">
-            <button class="btn primary" id="signInBtn">Anmelden</button>
-            <button class="btn ghost" id="signUpBtn">Konto erstellen</button>
-          </div>
+      <section class="card access-card">
+        <div>
+          <div class="kicker">Zugang für zweiten Elternteil</div>
+          <h2>Einladungscode</h2>
+          <p class="muted">Einmalig direkt weitergeben.</p>
         </div>
-
-        <div id="signedInBox" class="hidden">
-          <div class="account-row">
-            <div><strong>Angemeldet</strong><div class="note" id="accountEmail"></div></div>
-            <button class="btn ghost small" id="signOutBtn">Abmelden</button>
-          </div>
-          <button class="btn primary full" id="syncNowBtn">🔄 Jetzt synchronisieren</button>
-          <div id="lastSync" class="status"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="section-title">⚙️ App</div>
-        <label class="field"><span>Name / Titel</span><input id="journalName" type="text" placeholder="Mein Tagebuch"></label>
-        <button class="btn primary" id="saveSettings">Einstellungen speichern</button>
-      </div>
-
-      <div class="card">
-        <div class="section-title">💾 Backup & Daten</div>
-        <div class="settings-grid">
-          <button class="btn ghost" id="exportJson">JSON-Backup exportieren</button>
-          <button class="btn ghost" id="exportCsv">CSV exportieren</button>
-          <button class="btn ghost" id="importBtn">Backup importieren</button>
-          <button class="btn danger" id="deleteAll">Alle lokalen Daten löschen</button>
-        </div>
-        <input id="importFile" type="file" accept=".json,application/json" hidden>
-        <p class="note">JSON eignet sich als vollständiges Backup. CSV ist praktisch für Tabellenprogramme.</p>
-      </div>
-
-      <div class="card">
-        <div class="section-title">📲 Installation</div>
-        <button class="btn primary" id="installBtn" style="display:none">App installieren</button>
-        <p class="note">Über GitHub Pages läuft die App per HTTPS und kann auf Android/Chrome als PWA installiert werden.</p>
-      </div>
+        <div id="inviteCodeDisplay" class="invite-code">--------</div>
+      </section>
     </section>
   </main>
-</div>
 
-<nav class="bottom-nav">
-  <div class="nav-inner">
-    <button class="nav-btn active" data-screen="today"><b>🏠</b>Heute</button>
-    <button class="nav-btn" data-screen="history"><b>📖</b>Verlauf</button>
-    <button class="nav-btn" data-screen="stats"><b>📊</b>Auswertung</button>
-    <button class="nav-btn" data-screen="settings"><b>⚙️</b>Einstellungen</button>
-  </div>
-</nav>
+  <dialog id="entryDialog">
+    <form id="entryForm" class="dialog-form" method="dialog">
+      <div class="dialog-head">
+        <div>
+          <div class="kicker" id="dialogKind">Neuer Eintrag</div>
+          <h2 id="dialogHeading">Eintrag</h2>
+        </div>
+        <button id="closeDialog" class="x-btn" type="button" aria-label="Schliessen">×</button>
+      </div>
 
-<div class="toast" id="toast"></div>
+      <input id="entryId" type="hidden" />
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./config.js"></script>
-<script src="./app.js"></script>
+      <label>Kind
+        <select id="entryChild" required></select>
+      </label>
+
+      <label>Was ist zu erledigen / wichtig?
+        <input id="entryTitle" type="text" maxlength="140" required placeholder="Kurz und sachlich" />
+      </label>
+
+      <label id="detailsLabel">Kurze Notiz
+        <textarea id="entryDetails" rows="3" maxlength="1500" placeholder="Optional"></textarea>
+      </label>
+
+      <div class="two-col">
+        <label>Datum
+          <input id="entryDate" type="date" />
+        </label>
+        <label>Priorität
+          <select id="entryPriority">
+            <option value="normal">Normal</option>
+            <option value="important">Wichtig</option>
+            <option value="urgent">Dringend</option>
+          </select>
+        </label>
+      </div>
+
+      <label>Wer kümmert sich darum?
+        <select id="entryOwner"></select>
+      </label>
+
+      <label>Status
+        <select id="entryStatus">
+          <option value="open">Offen</option>
+          <option value="in_progress">In Bearbeitung</option>
+          <option value="done">Erledigt</option>
+        </select>
+      </label>
+
+      <div class="dialog-actions">
+        <button id="deleteBtn" class="danger hidden" type="button">Löschen</button>
+        <span></span>
+        <button id="cancelBtn" class="secondary" type="button">Abbrechen</button>
+        <button class="primary" type="submit">Speichern</button>
+      </div>
+      <div id="entryMsg" class="msg" aria-live="polite"></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

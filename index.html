@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <meta name="description" content="Privates, synchronisierbares Tagebuch als PWA">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+  <title>Mein Tagebuch</title>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="headrow">
+      <div>
+        <h1 id="appTitle">Mein Tagebuch</h1>
+        <div class="date-label" id="todayLabel"></div>
+      </div>
+      <button id="syncBadge" class="sync-badge" title="Synchronisieren">● Lokal</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="screen-today" class="screen active">
+      <div id="authNotice" class="card notice">
+        <div>
+          <strong>☁️ Cloud-Sync noch nicht aktiv</strong>
+          <div class="note">Die App funktioniert lokal. Unter Einstellungen kannst du Supabase verbinden und dich anmelden.</div>
+        </div>
+        <button class="btn small" data-goto="settings">Einrichten</button>
+      </div>
+
+      <div class="card">
+        <div class="section-title">📝 Tages-Eintrag</div>
+        <label class="field"><span>Datum</span><input id="entryDate" type="date"></label>
+
+        <div class="section-title">😊 Wie geht es mir gerade?</div>
+        <div class="moods">
+          <button class="mood-btn" data-v="1">😞<small>sehr tief</small></button>
+          <button class="mood-btn" data-v="2">😕<small>eher tief</small></button>
+          <button class="mood-btn" data-v="3">😐<small>neutral</small></button>
+          <button class="mood-btn" data-v="4">🙂<small>gut</small></button>
+          <button class="mood-btn" data-v="5">😊<small>sehr gut</small></button>
+        </div>
+
+        <div class="slider-wrap">
+          <div class="slider-head"><span>⚡ Energie</span><span class="value-pill" id="energyVal">5</span></div>
+          <input id="energy" type="range" min="0" max="10" step="1" value="5">
+        </div>
+        <div class="slider-wrap">
+          <div class="slider-head"><span>🧠 Innere Anspannung</span><span class="value-pill" id="tensionVal">5</span></div>
+          <input id="tension" type="range" min="0" max="10" step="1" value="5">
+        </div>
+        <div class="slider-wrap">
+          <div class="slider-head"><span>😴 Schlaf</span><span class="value-pill" id="sleepVal">3</span></div>
+          <input id="sleep" type="range" min="1" max="5" step="1" value="3">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">💭 Gedanken & Rückblick</div>
+        <label class="field"><span>Was beschäftigt mich heute?</span><textarea id="thoughts" placeholder="Ein paar Stichworte reichen..."></textarea></label>
+        <label class="field"><span>☀️ Was war heute gut?</span><textarea id="good" placeholder="Was hat dir gutgetan oder Freude gemacht?"></textarea></label>
+        <label class="field"><span>🌧️ Was war schwierig?</span><textarea id="hard" placeholder="Was hat Kraft gekostet?"></textarea></label>
+        <label class="field"><span>🛠️ Was hat mir geholfen?</span><textarea id="helped" placeholder="Menschen, Gedanken, Pausen, Bewegung, Musik..."></textarea></label>
+        <label class="field"><span>⭐ Mein Moment des Tages</span><textarea id="moment" placeholder="Ein Moment, den du behalten möchtest..."></textarea></label>
+        <label class="field"><span>🎯 Für morgen</span><textarea id="tomorrow" placeholder="Eine Sache, die morgen wichtig ist..."></textarea></label>
+      </div>
+
+      <div class="card">
+        <div class="section-title">❤️ Gefühle</div>
+        <div class="chips" id="feelings"></div>
+        <div class="section-title spaced">🌱 Was habe ich für mich getan?</div>
+        <div class="chips" id="selfcare"></div>
+        <div class="actions">
+          <button class="btn primary" id="saveBtn">💾 Eintrag speichern</button>
+          <button class="btn ghost" id="clearBtn">↺ Felder leeren</button>
+        </div>
+        <div class="status" id="formStatus"></div>
+      </div>
+    </section>
+
+    <section id="screen-history" class="screen">
+      <div class="card">
+        <div class="section-title">📖 Verlauf</div>
+        <input id="historySearch" type="search" placeholder="Einträge durchsuchen...">
+        <div id="historyList" class="history-list"></div>
+      </div>
+      <div class="card">
+        <div class="calendar-head">
+          <button id="prevMonth">‹</button>
+          <strong id="monthTitle"></strong>
+          <button id="nextMonth">›</button>
+        </div>
+        <div class="cal-grid" id="calendar"></div>
+      </div>
+    </section>
+
+    <section id="screen-stats" class="screen">
+      <div class="card">
+        <div class="section-title">📊 Auswertung</div>
+        <div class="seg">
+          <button data-days="7" class="active">7 Tage</button>
+          <button data-days="30">30 Tage</button>
+        </div>
+        <div class="stats">
+          <div class="stat"><strong id="avgMood">–</strong><span>Stimmung / 5</span></div>
+          <div class="stat"><strong id="avgEnergy">–</strong><span>Energie / 10</span></div>
+          <div class="stat"><strong id="avgTension">–</strong><span>Anspannung / 10</span></div>
+          <div class="stat"><strong id="avgSleep">–</strong><span>Schlaf / 5</span></div>
+        </div>
+        <canvas id="chart" width="760" height="260"></canvas>
+        <p class="note">Stimmung und Schlaf werden für das Diagramm auf eine 0–10-Skala umgerechnet.</p>
+      </div>
+    </section>
+
+    <section id="screen-settings" class="screen">
+      <div class="card">
+        <div class="section-title">☁️ Cloud-Synchronisierung</div>
+        <div id="cloudConfig">
+          <label class="field"><span>Supabase Project URL</span><input id="supabaseUrl" type="url" placeholder="https://xxxxx.supabase.co"></label>
+          <label class="field"><span>Supabase Publishable Key</span><input id="supabaseKey" type="password" placeholder="sb_publishable_..."></label>
+          <div class="actions">
+            <button class="btn primary" id="connectCloud">Verbindung speichern</button>
+            <button class="btn ghost" id="forgetCloud">Verbindung entfernen</button>
+          </div>
+          <p class="note">Nur Publishable-/Anon-Key verwenden. Niemals Secret- oder Service-Role-Key hier eintragen.</p>
+        </div>
+
+        <hr>
+
+        <div id="signedOutBox">
+          <div class="section-title">🔐 Anmeldung</div>
+          <label class="field"><span>E-Mail</span><input id="authEmail" type="email" autocomplete="email"></label>
+          <label class="field"><span>Passwort</span><input id="authPassword" type="password" autocomplete="current-password" minlength="8"></label>
+          <div class="actions">
+            <button class="btn primary" id="signInBtn">Anmelden</button>
+            <button class="btn ghost" id="signUpBtn">Konto erstellen</button>
+          </div>
+        </div>
+
+        <div id="signedInBox" class="hidden">
+          <div class="account-row">
+            <div><strong>Angemeldet</strong><div class="note" id="accountEmail"></div></div>
+            <button class="btn ghost small" id="signOutBtn">Abmelden</button>
+          </div>
+          <button class="btn primary full" id="syncNowBtn">🔄 Jetzt synchronisieren</button>
+          <div id="lastSync" class="status"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">⚙️ App</div>
+        <label class="field"><span>Name / Titel</span><input id="journalName" type="text" placeholder="Mein Tagebuch"></label>
+        <button class="btn primary" id="saveSettings">Einstellungen speichern</button>
+      </div>
+
+      <div class="card">
+        <div class="section-title">💾 Backup & Daten</div>
+        <div class="settings-grid">
+          <button class="btn ghost" id="exportJson">JSON-Backup exportieren</button>
+          <button class="btn ghost" id="exportCsv">CSV exportieren</button>
+          <button class="btn ghost" id="importBtn">Backup importieren</button>
+          <button class="btn danger" id="deleteAll">Alle lokalen Daten löschen</button>
+        </div>
+        <input id="importFile" type="file" accept=".json,application/json" hidden>
+        <p class="note">JSON eignet sich als vollständiges Backup. CSV ist praktisch für Tabellenprogramme.</p>
+      </div>
+
+      <div class="card">
+        <div class="section-title">📲 Installation</div>
+        <button class="btn primary" id="installBtn" style="display:none">App installieren</button>
+        <p class="note">Über GitHub Pages läuft die App per HTTPS und kann auf Android/Chrome als PWA installiert werden.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <div class="nav-inner">
+    <button class="nav-btn active" data-screen="today"><b>🏠</b>Heute</button>
+    <button class="nav-btn" data-screen="history"><b>📖</b>Verlauf</button>
+    <button class="nav-btn" data-screen="stats"><b>📊</b>Auswertung</button>
+    <button class="nav-btn" data-screen="settings"><b>⚙️</b>Einstellungen</button>
+  </div>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./config.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
